@@ -1,0 +1,4 @@
+.idea/
+output.csv
+__pycache__/
+CoSent/__pycache__/
