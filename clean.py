@@ -45,8 +45,8 @@ families_brand = {
 
 
 def clean(data)->pd.DataFrame:
-    """Clean X2.csv data to a readable format.
-    :param data: X2.csv
+    """Clean X1.csv data to a readable format.
+    :param data: X1.csv
     :return:
         A DataFrame which contains following columns:
         {instance_id: instance_id of items;
@@ -295,35 +295,6 @@ def clean(data)->pd.DataFrame:
             name_family,
             titles[row][0].lower()
         ])
-        # 标注
-        # names = ['brand', 'cpu_brand', 'cpu_core', 'cpu_model', 'cpu_frequency', 'ram_capacity', 'display_size',
-        #          'name_number', 'name_family']
-        # tag = []
-        # mapping = {'brand': brand,
-        #            'cpu_brand': cpu_brand,
-        #            'cpu_core': cpu_core,
-        #            'cpu_model': cpu_model,
-        #            'cpu_frequency': cpu_frequency,
-        #            'ram_capacity': ram_capacity,
-        #            'display_size': display_size,
-        #            'name_number': name_number,
-        #            'name_family': name_family}
-        # words = titles[row][0].lower().split()
-        # for i in range(len(words)):
-        #     tag.append('0')
-        # for name in names:
-        #     if name == 'brand':
-        #         for x in brand_list:
-        #             if x.strip() in words:
-        #                 index = words.index(x.strip())
-        #                 tag[index] = 'B-' + 'brand'
-        #     else:
-        #         if mapping[name] != '0':
-        #             if mapping[name] in words:
-        #                 index = words.index(mapping[name])
-        #                 tag[index] = 'B-' + name
-
-        # print(tag)
 
     result = pd.DataFrame(result)
     name = [

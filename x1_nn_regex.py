@@ -9,6 +9,12 @@ from clean import clean
 
 
 def recall_calculation(predict: list, gnd: pd.DataFrame):
+    """
+    Calculate Recall
+    :param predict: list of predicted output pairs
+    :param gnd: ground truth read from Y1/Y2.csv
+    :return: recall
+    """
     cnt = 0
     for i in range(len(predict)):
         if not gnd[(gnd['lid'] == predict[i][0]) & (gnd['rid'] == predict[i][1])].empty:
@@ -17,6 +23,13 @@ def recall_calculation(predict: list, gnd: pd.DataFrame):
 
 
 def x1_test(data: pd.DataFrame, limit: int, model_path: str) -> list:
+    """
+    Generate X1 result pairs
+    :param data: raw data read from X1.csv
+    :param limit: the maximum number of output pairs
+    :param model_path: the path of neural network model
+    :return: a list of output pairs
+    """
     # clusters = handle(data)
     features = clean(data)
     model = SentenceTransformer(model_path, device='cpu')
@@ -143,144 +156,11 @@ def x1_test(data: pd.DataFrame, limit: int, model_path: str) -> list:
                     continue
                 candidate_pairs.append((small, large, D[i][j]))
 
-    # x11_pairs = block_with_attr(raw_data, attr="title")
-    # for (x1, x2) in x11_pairs:
-    #     vector1 = encodings[x1]
-    #     vector2 = encodings[x2]
-    #     distance = 0
-    #     for k in range(len(vector1)):
-    #         distance += (vector1[k]-vector2[k])**2
-    #     small=min(ids[x1],ids[x2])
-    #     large=max(ids[x1],ids[x2])
-    #     visit_token=str(small)+" "+str(large)
-    #     if visit_token not in visited_set:
-    #         candidate_pairs.append((small, large, distance))
-    #         visited_set.add(visit_token)
-
     candidate_pairs.sort(key=lambda x: x[2])
     candidate_pairs = candidate_pairs[:limit]
     output = list(map(lambda x: (x[0], x[1]), candidate_pairs))
     output.extend(regex_pairs)
-    # predict = output
-    # # cnt = 0
-    # gnd = pd.read_csv("../Y1.csv")
-    # for it in gnd:
-    #     if it not in predict:
-    #         print(it)
-    # for i in range(len(predict)):
-    #     if not gnd[(gnd['lid'] == predict[i][0]) & (gnd['rid'] == predict[i][1])].empty:
-    #         cnt += 1
-    # recall = cnt / gnd.values.shape[0]
-    # print('recall:\t', recall)
     return output
-
-
-def block_with_attr(X, attr):  # replace with your logic.
-    '''
-    This function performs blocking using attr
-    :param X: dataframe
-    :param attr: attribute used for blocking
-    :return: candidate set of tuple pairs
-    '''
-
-    # build index from patterns to tuples
-    pattern2id_1 = defaultdict(list)
-    pattern2id_2 = defaultdict(list)
-    pattern2id_3 = defaultdict(list)
-    pattern2id_4 = defaultdict(list)
-    for i in tqdm(range(X.shape[0])):
-        attr_i = str(X[attr][i])
-        pattern_1 = " ".join(sorted(attr_i.lower().split()))  # use the whole attribute as the pattern
-        pattern2id_1[pattern_1].append(i)
-
-        pattern_2 = re.findall("\w+\s\w+\d+", attr_i)  # look for patterns like "thinkpad x1"
-        if len(pattern_2) != 0:
-            pattern_2 = list(sorted(pattern_2))
-            pattern_2 = [str(it).lower() for it in pattern_2]
-            pattern2id_2[" ".join(pattern_2)].append(i)
-
-        pattern_3 = []
-        pattern_3_tmp = re.findall("\w+-\w+", attr_i)
-        for x in pattern_3_tmp:
-            if "bit" in x.lower():
-                continue
-            pattern_3.append(x)
-        if len(pattern_3) != 0:
-            pattern_3 = list(sorted(pattern_3))
-            pattern_3 = [str(it).lower() for it in pattern_3]
-            pattern2id_3[" ".join(pattern_3)].append(i)
-
-        pattern_4_tmp = re.findall("\d+\w+", attr_i)
-        pattern_4 = []
-        for x in pattern_4_tmp:
-            if len(x) >= 4:
-                pattern_4.append(x)
-        if len(pattern_4) != 0:
-            pattern_4 = list(sorted(pattern_4))
-            pattern_4 = [str(it).lower() for it in pattern_4]
-            pattern2id_4[" ".join(pattern_4)].append(i)
-    # add id pairs that share the same pattern to candidate set
-    candidate_pairs_1 = []
-    for pattern in tqdm(pattern2id_1):
-        ids = list(sorted(pattern2id_1[pattern]))
-        for i in range(len(ids)):
-            for j in range(i + 1, len(ids)):
-                candidate_pairs_1.append((ids[i], ids[j]))  #
-    # add id pairs that share the same pattern to candidate set
-    candidate_pairs_2 = []
-    for pattern in tqdm(pattern2id_2):
-        ids = list(sorted(pattern2id_2[pattern]))
-        if len(ids) < 100:  # skip patterns that are too common
-            for i in range(len(ids)):
-                for j in range(i + 1, len(ids)):
-                    candidate_pairs_2.append((ids[i], ids[j]))
-
-    candidate_pairs_3 = []
-    for pattern in tqdm(pattern2id_3):
-        ids = list(sorted(pattern2id_3[pattern]))
-        if len(ids) < 100:  # skip patterns that are too common
-            for i in range(len(ids)):
-                for j in range(i + 1, len(ids)):
-                    candidate_pairs_3.append((ids[i], ids[j]))
-
-    candidate_pairs_4 = []
-    for pattern in tqdm(pattern2id_4):
-        ids = list(sorted(pattern2id_4[pattern]))
-        if len(ids) < 100:  # skip patterns that are too common
-            for i in range(len(ids)):
-                for j in range(i + 1, len(ids)):
-                    candidate_pairs_4.append((ids[i], ids[j]))
-
-    # remove duplicate pairs and take union
-    candidate_pairs = set(candidate_pairs_2)
-    candidate_pairs = candidate_pairs.union(set(candidate_pairs_1)).union(set(candidate_pairs_3)).union(
-        set(candidate_pairs_4))
-    candidate_pairs = list(candidate_pairs)
-
-    # sort candidate pairs by jaccard similarity.
-    # In case we have more than 1000000 pairs (or 2000000 pairs for the second dataset),
-    # sort the candidate pairs to put more similar pairs first,
-    # so that when we keep only the first 1000000 pairs we are keeping the most likely pairs
-    # jaccard_similarities = []
-    # candidate_pairs_real_ids = []
-    # for it in tqdm(candidate_pairs):
-    #     id1, id2 = it
-    #     # get real ids
-    #     real_id1 = X['id'][id1]
-    #     real_id2 = X['id'][id2]
-    #     if id1 < id2:  # NOTE: This is to make sure in the final output.csv, for a pair id1 and id2 (assume id1<id2), we only include (id1,id2) but not (id2, id1)
-    #         candidate_pairs_real_ids.append((id1, id2))
-    #     else:
-    #         candidate_pairs_real_ids.append((id1, id2))
-
-    # compute jaccard similarity
-    #     name1 = str(X[attr][id1])
-    #     name2 = str(X[attr][id2])
-    #     s1 = set(name1.lower().split())
-    #     s2 = set(name2.lower().split())
-    #     jaccard_similarities.append(len(s1.intersection(s2)) / max(len(s1), len(s2)))
-    # candidate_pairs_real_ids = [x for _, x in sorted(zip(jaccard_similarities, candidate_pairs_real_ids), reverse=True)]
-    return candidate_pairs
 
 
 def save_output(X1_candidate_pairs,
@@ -318,15 +198,6 @@ if __name__ == '__main__':
         raw_data = pd.read_csv("X2.csv")
         save_output(x1_pairs, [])
         print("success")
-        # calculate
-        # with open('../Y1.csv', 'r') as csv1, open('output.csv', 'r') as csv2:
-        #     import1 = csv1.readlines()
-        #     import2 = csv2.readlines()
-        #     same = 0
-        #     for row in import2:
-        #         if row in import1:
-        #             same = same + 1
-        #     print(same / len(import1)*2815)
 
     elif mode == 1:
         test_data = pd.read_csv("data/x1_test.csv")
