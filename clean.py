@@ -3,8 +3,8 @@ import re
 
 # brands = ['dell', 'lenovo', 'acer', 'asus', 'hp']
 brands = ['compaq', 'toshiba', 'sony', 'ibm', 'epson', 'xmg', 'vaio', 'samsung', 'panasonic ', 'nec ', 'gateway',
-          'google', 'fujitsu', 'eurocom', 'asus', 'alienware', 'dell','aoson','gemei','msi',
-          'lenovo', 'acer', 'asus', 'hp', 'lg ', 'microsoft','apple']
+          'google', 'fujitsu', 'eurocom', 'asus', 'alienware', 'dell', 'aoson', 'gemei', 'msi',
+          'lenovo', 'acer', 'asus', 'hp', 'lg ', 'microsoft', 'apple']
 
 cpu_brands = ['intel', 'amd']
 
@@ -19,33 +19,36 @@ families = {
     'acer': [r'aspire', r'extensa', ],
     '0': []
 }
+
 families_brand = {
-    'elitebook': {'hp','panasonic '}, # panasonic
+    'elitebook': {'hp', 'panasonic '},  # panasonic
     'compaq': {'hp'},
     'folio': {'hp'},
-    'pavilion': {'hp','panasonic '}, #panasonic
-    'inspiron': {'dell','lenovo'}, #lenovo
+    'pavilion': {'hp', 'panasonic '},  # panasonic
+    'inspiron': {'dell', 'lenovo'},  # lenovo
     'zenbook': {'asus'},
     'aspire': {'acer'},
     'extensa': {'acer'},
-    'thinkpad': {'lenovo'}, #panasonic
+    'thinkpad': {'lenovo'},  # panasonic
     'thinkcentre': {'lenovo'},
-    'thinkserver' :{'lenovo'},
+    'thinkserver': {'lenovo'},
     'toughbook': {'panasonic '},
     'envy': {'hp'},
     'macbook': {'apple'},
     'probook': {'hp'},
     'latitude': {'dell'},
     # 'chromebook': {'0'},
-    'tecra':{'toshiba'},
-    'touchsmart':{'hp'},
+    'tecra': {'toshiba'},
+    'touchsmart': {'hp'},
     # 'dominator':'msi',
-    'satellite':{'toshiba'}
+    'satellite': {'toshiba'}
 }
 
 
-def clean(data)->pd.DataFrame:
-    """Clean X1.csv data to a readable format.
+def clean(data) -> pd.DataFrame:
+    """
+    Clean X1.csv data to a readable format.
+
     :param data: X1.csv
     :return:
         A DataFrame which contains following columns:
@@ -60,7 +63,7 @@ def clean(data)->pd.DataFrame:
          pc_name: name information extract from title;
          name_family: family name of computer;
          title: title information of instance}
-         it the value can't extract from the information given, '0' will be filled.
+         If the value can't extract from the information given, '0' will be filled.
     """
 
     instance_ids = data.filter(items=['id'], axis=1)
@@ -73,14 +76,14 @@ def clean(data)->pd.DataFrame:
         # title of each row
         if len(titles[row]) == 0:
             titles[row] = ['']
-        rowinfo = ' '+titles[row][0]+' '
+        rowinfo = ' ' + titles[row][0] + ' '
 
         # brand = '0'
-        brand={}
+        brand = {}
         cpu_brand = '0'
         cpu_core = '0'
         # cpu_model = '0'
-        cpu_model=set()
+        cpu_model = set()
         cpu_frequency = '0'
         ram_capacity = '0'
         display_size = '0'
@@ -94,18 +97,18 @@ def clean(data)->pd.DataFrame:
 
         for b in brands:
             if b in lower_item:
-                brand[b]=None
+                brand[b] = None
                 # brand = b
                 # brand_list.append(b)
         if 'pansonic' in lower_item:
-            brand['panasonic ']=None
+            brand['panasonic '] = None
 
-        if len(brand)==0:
+        if len(brand) == 0:
             for family in families_brand.keys():
                 # if family in lower_item and brand == '0':
                 if family in lower_item:
                     for b in families_brand[family]:
-                        brand[b]=None
+                        brand[b] = None
                     # name_family = family
                     # brand_list.append(brand)
                     break
@@ -131,7 +134,7 @@ def clean(data)->pd.DataFrame:
         if 'lenovo' in brand:
             # print(name_info)
             result_name_number = re.search(
-                r'[\- ][0-9]{4}[0-9a-zA-Z]{2}[0-9a-yA-Y](?![0-9a-zA-Z])', name_info) #
+                r'[\- ][0-9]{4}[0-9a-zA-Z]{2}[0-9a-yA-Y](?![0-9a-zA-Z])', name_info)  #
             if result_name_number is None:
                 result_name_number = re.search(
                     r'[\- ][0-9]{4}(?![0-9a-zA-Z])', name_info)
@@ -191,12 +194,12 @@ def clean(data)->pd.DataFrame:
                 # print(result_name_number.group())
                 name_number = result_name_number.group().lower().replace(' ', '-').replace('-', '')
 
-        cpu_model_list=[]
+        cpu_model_list = []
         # if cpu_brand == 'intel':
         # item_curr = name_info.replace(
         #     name_number, '').replace(
         #     name_number.upper(), '')
-        item_curr=lower_item
+        item_curr = lower_item
         # print(item_curr)
         result_model = re.findall(
             r'[\- ][0-9]{4}[Qq]?[MmUu](?![Hh][Zz])', item_curr)
@@ -214,7 +217,7 @@ def clean(data)->pd.DataFrame:
         result_model = re.findall('[\\- ]867', item_curr)
         cpu_model_list.extend(result_model)
         result_model = re.findall(
-                '[\\- ]((1st)|(2nd)|(3rd)|([4-9]st))[ ][Gg]en', item_curr)
+            '[\\- ]((1st)|(2nd)|(3rd)|([4-9]st))[ ][Gg]en', item_curr)
         cpu_model_list.extend(result_model)
 
         if cpu_core == 'a8':
@@ -224,9 +227,8 @@ def clean(data)->pd.DataFrame:
         result_model = re.findall('[\\- ]HD[\\- ][0-9]{4}', item_curr)
         cpu_model_list.extend(result_model)
         result_model = re.findall(
-                '[\\- ][AaEe][\\- ][0-9]{3}', item_curr)
+            '[\\- ][AaEe][\\- ][0-9]{3}', item_curr)
         cpu_model_list.extend(result_model)
-
 
         if cpu_core in ('radeon', 'athlon', 'turion', 'phenom'):
             # if result_model is None:
@@ -234,12 +236,10 @@ def clean(data)->pd.DataFrame:
             cpu_model_list.extend(result_model)
             # if result_model is None:
             result_model = re.findall(
-                    '[\\- ](64[ ]?[Xx]2)|([Nn][Ee][Oo])', item_curr)
+                '[\\- ](64[ ]?[Xx]2)|([Nn][Ee][Oo])', item_curr)
             cpu_model_list.extend(result_model)
 
-
         cpu_model = set(list(map(lambda x: x[1:], cpu_model_list)))
-
 
         result_frequency = re.search(
             r'[123][ .][0-9]?[0-9]?[ ]?[Gg][Hh][Zz]', name_info)

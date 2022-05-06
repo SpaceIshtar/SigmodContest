@@ -1,17 +1,12 @@
 import re
 from collections import defaultdict
 import faiss
-import numpy as np
 import torch
 import pandas as pd
 from typing import *
-from scipy.spatial import distance
 from CoSent.model import Model, encode, myTokenizer
 
 nonsense = ['|', ',', '-', ':', '/', '+', '&']
-
-# brand_portion = {'sandisk': 0.25, 'lexar': 0.192, '0': 0.028, 'kingston': 0.133, 'intenso': 0.07, 'toshiba': 0.155,
-#                  'sony': 0.123, 'samsung': 0.013, 'pny': 0.034, 'transcend': 0.008}
 
 sandisk_patterns = [r'sandisk|cruzer|glide|256gb|usb',
                     r'sandisk|cruzer|glide|32gb',
@@ -48,18 +43,19 @@ sandisk_patterns = [r'sandisk|cruzer|glide|256gb|usb',
 
 
 def block_x2(dataset: pd.DataFrame, max_limit):
+    """
+    Generate X2 result pairs
+
+    :param dataset: feature dataframe of X2.csv after extracting
+    :param max_limit: the maximum number of output pairs
+    :return: a list of output pairs
+    """
     model_path = f'./CoSent/x2_model/base_model_epoch_{38}.bin'
     my_model = Model(config_path='./CoSent/prajjwal1_bert-tiny/config.json',
                      bert_path='./CoSent/prajjwal1_bert-tiny/pytorch_model.bin')
     my_model.load_state_dict(torch.load(model_path, map_location='cpu'))
     tokenizer = myTokenizer('./CoSent/prajjwal1_bert-tiny')
     encodings = encode(model=my_model, sentences=dataset['name'], tokenizer=tokenizer)
-
-    # sandisk_model_path = f'./CoSent/x2_bertmini_sandisk/x2_bertmini/base_model_epoch_{4}.bin'
-    # sandisk_model = Model(config_path='./CoSent/x2_bertmini_sandisk/x2_bertmini/config.json',
-    #                  bert_path=sandisk_model_path)
-    # sandisk_model.load_state_dict(torch.load(sandisk_model_path, map_location='cpu'))
-    # sandisk_tokenizer = myTokenizer('./CoSent/x2_bertmini_sandisk/x2_bertmini')
 
     ids = dataset['id'].values
     series_list = dataset['series'].values
@@ -81,10 +77,6 @@ def block_x2(dataset: pd.DataFrame, max_limit):
 
     for idx in range(dataset.shape[0]):
         buckets[brand_list[idx]].append(idx)
-        # if brand_list[idx] == 'sandisk' and mem_list[idx] in ('microsd', 'sd') and model_list[idx] == 'ultra+' and \
-        #         capacity_list[idx] == '32g':
-        #     confident_buckets['accessoires montres ' + mem_list[idx]].append(idx)
-        # el
         if hybrid_list[idx] != '0' or long_num_list[idx] != '0':
             special_buckets[hybrid_list[idx] + long_num_list[idx]].append(idx)
         elif brand_list[idx] == 'sandisk':
@@ -95,17 +87,9 @@ def block_x2(dataset: pd.DataFrame, max_limit):
                     confident_buckets['_'.join(result_re)].append(idx)
                     break
 
-        # elif brand_list[idx] == 'sandisk' and mem_list[idx] == 'microsd' and model_list[idx] == 'ext+' and \
-        #         capacity_list[idx] == '16g': /////////////// will reduce recall by 0.001
-        #     special_buckets['microsdhc sandisk extreme pro ' + capacity_list[idx]].append(idx)
-        # elif brand_list[idx] == 'sony' and mem_list[idx] == 'microsd' and capacity_list[idx] == '128g':
-        #     special_buckets['sony microsd 128g'].append(idx) /////////////// danger
-        # print(brand_list[idx], '|', capacity_list[idx], '|', series_list[idx], '|', mem_list[idx], '|',
-        #       product_list[idx], '|', model_list[idx], '|', name_list[idx])
-
     visited_set = set()
     candidate_pairs = []
-    
+
     gnd_x2 = pd.read_csv("Y2.csv")
     for i in range(gnd_x2.shape[0]):
         visit_token = (gnd_x2['lid'][i], gnd_x2['rid'][i])
@@ -154,11 +138,6 @@ def block_x2(dataset: pd.DataFrame, max_limit):
     for key in buckets.keys():
         faiss_pairs = []
         bucket = buckets[key]
-        # if key == 'sandisk':
-        #     encodings = encode(model=sandisk_model, sentences=name_list[bucket], tokenizer=sandisk_tokenizer)
-        # else:
-        #     encodings = encode(model=my_model, sentences=name_list[bucket], tokenizer=tokenizer)
-        # embedding_matrix = encodings
         embedding_matrix = encodings[bucket]
         if key == 'sandisk':
             index_model = faiss.IndexHNSWFlat(len(embedding_matrix[0]), 16)

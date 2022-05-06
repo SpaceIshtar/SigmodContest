@@ -3,7 +3,8 @@ import re
 
 
 def extract_x2(data: pd.DataFrame) -> pd.DataFrame:
-    """Clean X2.csv data to a readable format.
+    """
+    Clean X2.csv data to a readable format.
 
     :param data: X2.csv
 
@@ -91,9 +92,6 @@ def extract_x2(data: pd.DataFrame) -> pd.DataFrame:
 
         if name_info == 'pam??ová karta kingston sdhc 16gb uhs-i u1 (90r/45w)':
             name_info = 'Kingston Technology SDA10/16GB 16GB UHS-I Ultimate Flash Card'.lower()
-
-        # if name_info == 'Karta pami?ci SDHC (Secure Digital High Capacity) gwarantuj?ca minimaln? szybko?? transferu 4 MB/s, kompatybilna tylko z urz?dzeniami obs?uguj?cymi standard SDHC. Obj?ta wieczyst? gwarancj?.'.lower():
-        #     name_info = 'Kingston Secure Digital High-Capacity 4GB'.lower()
 
         size_model = re.findall(r'[0-9]{1,4}[ ]*[gt][bo]', name_info)
         if len(size_model) > 0:

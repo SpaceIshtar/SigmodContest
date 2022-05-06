@@ -2,32 +2,18 @@ import re
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import faiss
-from tqdm import tqdm
 from typing import *
 from collections import defaultdict
 from clean import clean
 
 
-def recall_calculation(predict: list, gnd: pd.DataFrame):
-    """
-    Calculate Recall
-    :param predict: list of predicted output pairs
-    :param gnd: ground truth read from Y1/Y2.csv
-    :return: recall
-    """
-    cnt = 0
-    for i in range(len(predict)):
-        if not gnd[(gnd['lid'] == predict[i][0]) & (gnd['rid'] == predict[i][1])].empty:
-            cnt += 1
-    return cnt / gnd.values.shape[0]
-
-
 def x1_test(data: pd.DataFrame, limit: int, model_path: str) -> list:
     """
     Generate X1 result pairs
+
     :param data: raw data read from X1.csv
     :param limit: the maximum number of output pairs
-    :param model_path: the path of neural network model
+    :param model_path: the path of SentenceTransformer model
     :return: a list of output pairs
     """
     # clusters = handle(data)
@@ -161,107 +147,3 @@ def x1_test(data: pd.DataFrame, limit: int, model_path: str) -> list:
     output = list(map(lambda x: (x[0], x[1]), candidate_pairs))
     output.extend(regex_pairs)
     return output
-
-
-def save_output(X1_candidate_pairs,
-                X2_candidate_pairs):  # save the candset for both datasets to a SINGLE file output.csvcpu_model=set(list(map(lambda x:x[1:],cpu_model_list)))
-    expected_cand_size_X1 = 1000000
-    expected_cand_size_X2 = 2000000
-
-    # make sure to include exactly 1000000 pairs for dataset X1 and 2000000 pairs for dataset X2
-    if len(X1_candidate_pairs) > expected_cand_size_X1:
-        X1_candidate_pairs = X1_candidate_pairs[:expected_cand_size_X1]
-    if len(X2_candidate_pairs) > expected_cand_size_X2:
-        X2_candidate_pairs = X2_candidate_pairs[:expected_cand_size_X2]
-
-    # make sure to include exactly 1000000 pairs for dataset X1 and 2000000 pairs for dataset X2
-    if len(X1_candidate_pairs) < expected_cand_size_X1:
-        X1_candidate_pairs.extend([(0, 0)] * (expected_cand_size_X1 - len(X1_candidate_pairs)))
-    if len(X2_candidate_pairs) < expected_cand_size_X2:
-        X2_candidate_pairs.extend([(0, 0)] * (expected_cand_size_X2 - len(X2_candidate_pairs)))
-
-    all_cand_pairs = X1_candidate_pairs + X2_candidate_pairs  # make sure to have the pairs in the first dataset first
-    output_df = pd.DataFrame(all_cand_pairs, columns=["left_instance_id", "right_instance_id"])
-    # In evaluation, we expect output.csv to include exactly 3000000 tuple pairs.
-    # we expect the first 1000000 pairs are for dataset X1, and the remaining pairs are for dataset X2
-    output_df.to_csv("output.csv", index=False)
-
-
-if __name__ == '__main__':
-
-    path = './fromstart_further_x1_berttiny_finetune_epoch20_margin0.01'
-    mode = 1
-    if mode == 0:
-        raw_data = pd.read_csv("X1.csv")
-        raw_data['title'] = raw_data.title.str.lower()
-        x1_pairs = x1_test(raw_data, 1000000, path)
-        raw_data = pd.read_csv("X2.csv")
-        save_output(x1_pairs, [])
-        print("success")
-
-    elif mode == 1:
-        test_data = pd.read_csv("data/x1_test.csv")
-        train_data = pd.read_csv("data/x1_train.csv")
-        origin_data = pd.read_csv("X1.csv")
-        test_gnd = pd.read_csv("data/y1_test.csv")
-        train_gnd = pd.read_csv("data/y1_train.csv")
-        origin_gnd = pd.read_csv("Y1.csv")
-        test_data['title'] = test_data.title.str.lower()
-        train_data['title'] = train_data.title.str.lower()
-        origin_data['title'] = origin_data.title.str.lower()
-        # test_data['instance_id']=test_data['id']
-        # train_data['instance_id']=train_data['id']
-        # origin_data['instance_id']=origin_data['id']
-        test_data = test_data[['id', 'title']]
-        train_data = train_data[['id', 'title']]
-        origin_data = origin_data[['id', 'title']]
-        test_pairs = x1_test(test_data, 488, path)
-        train_pairs = x1_test(train_data, 2326, path)
-        origin_pairs = x1_test(origin_data, 2814, path)
-        raw_data = pd.read_csv('X1.csv')
-        gnd = pd.read_csv('Y1.csv')
-        gnd['cnt'] = 0
-        features = clean(raw_data)
-        for idx in range(len(origin_pairs)):
-            left_id = origin_pairs[idx][0]
-            right_id = origin_pairs[idx][1]
-            index = gnd[(gnd['lid'] == left_id) & (gnd['rid'] == right_id)].index.tolist()
-            if len(index) > 0:
-                if len(index) > 1:
-                    raise Exception
-                gnd['cnt'][index[0]] += 1
-                if gnd['cnt'][index[0]] > 1:
-                    print(index)
-            else:
-                left_text = raw_data[raw_data['id'] == left_id]['title'].values[0]
-                right_text = raw_data[raw_data['id'] == right_id]['title'].values[0]
-                if left_text != right_text:
-                    print(idx, left_id, right_id)
-                    print(left_text, '|', right_text)
-                    print(features[features['instance_id'] == left_id]['brand'].iloc[0], '|||',
-                          features[features['instance_id'] == right_id]['brand'].iloc[0])
-                    print(features[features['instance_id'] == left_id]['family'].iloc[0], '|||',
-                          features[features['instance_id'] == right_id]['family'].iloc[0])
-                    print(features[features['instance_id'] == left_id]['cpu_model'].iloc[0], '|||',
-                          features[features['instance_id'] == right_id]['cpu_model'].iloc[0])
-                    print(features[features['instance_id'] == left_id]['pc_name'].iloc[0], '|||',
-                          features[features['instance_id'] == right_id]['pc_name'].iloc[0])
-                pass
-        print('-----------------------------------------------------------------------------------------------')
-        left = gnd[gnd['cnt'] == 0]
-        for idx in left.index:
-            if features[features['instance_id'] == left['lid'][idx]]['brand'].iloc[0] != \
-                    features[features['instance_id'] == left['rid'][idx]]['brand'].iloc[0]:
-                print(left['lid'][idx], ',', left['rid'][idx])
-            title1 = raw_data[raw_data['id'] == left['lid'][idx]]['title'].iloc[0]
-            title2 = raw_data[raw_data['id'] == left['rid'][idx]]['title'].iloc[0]
-            title1 = " ".join(sorted(title1.split()))
-            title2 = " ".join(sorted(title2.split()))
-            print(title1)
-            print(title2)
-            print(raw_data[raw_data['id'] == left['lid'][idx]]['title'].iloc[0], '|||',
-                  raw_data[raw_data['id'] == left['rid'][idx]]['title'].iloc[0])
-        print("Model: %s, test recall: %f, train recall: %f, origin recall: %f" % (
-            path, recall_calculation(test_pairs, test_gnd), recall_calculation(train_pairs, train_gnd),
-            recall_calculation(origin_pairs, origin_gnd)))
-#

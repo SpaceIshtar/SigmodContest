@@ -1,10 +1,10 @@
 # SigmodContest
 ## Members
-| name | email | institution |
-|------|-------|-------------|
+| name | email                        | institution |
+|------|------------------------------|-------------|
 | Jiarui Luo | 11911419@mail.sustech.edu.cn | Southern University of Science and Technology |
 | Xinying Zheng | 11912039@mail.sustech.edu.cn | Southern University of Science and Technology |
-| Renjie Liu || Southern University of Science and Technology |
+| Renjie Liu | 11911808@mail.sustech.edu.cn | Southern University of Science and Technology |
 
 ## Setup
 1. install anaconda3 and go into anaconda3 bash
@@ -22,8 +22,8 @@
 ## Algorithm 
 1. Use regular expressions to extract features from sentences
 2. Find entity pairs whose features are highly matched and add them at the beginning of the result set
-3. Encode each sentence using neural network
-4. Build an HNSW index with the help of faiss
-5. Search the index to find topk neighbors for each encoded sentence and generate (sentence, neighborhood) pairs
+3. Encode each sentence using neural network (bert-tiny)
+4. Build an HNSW index by faiss
+5. Search the index to find topK neighbors for each encoded sentence and generate (sentence, neighborhood) pairs
 6. Sort the pairs using cosine distance
 7. Filter the result to remove pairs that are unlikely to match using extracted features
