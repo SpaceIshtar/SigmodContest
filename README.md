@@ -1,8 +1,10 @@
 # SigmodContest
 ## Members
-Jiarui Luo email: 11911419@mail.sustech.edu.cn
-Xinying Zheng email: 11912039@mail.sustech.edu.cn
-Renjie Liu email:
+| name | email | institution |
+|------|-------|-------------|
+| Jiarui Luo | 11911419@mail.sustech.edu.cn | Southern University of Science and Technology |
+| Xinying Zheng | 11912039@mail.sustech.edu.cn | Southern University of Science and Technology |
+| Renjie Liu || Southern University of Science and Technology |
 
 ## Setup
 1. install anaconda3 and go into anaconda3 bash
