@@ -19,8 +19,8 @@
 ## Run
 `python Main.py`
 
-## Design
-1. Use regular expression to extract features from sentences
+## Algorithm 
+1. Use regular expressions to extract features from sentences
 2. Find entity pairs whose features are highly matched and add them at the beginning of the result set
 3. Encode each sentence using neural network
 4. Build an HNSW index with the help of faiss
